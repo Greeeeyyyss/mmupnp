@@ -248,6 +248,45 @@ class ActionInvokeTest {
     }
 
     @Test
+    fun invokeCustomWithHeaders() {
+        val value1 = "value1"
+        val value2 = "value2"
+        val name = "name"
+        val value = "value"
+        val headerKey = "Authorization"
+        val headerValue = "OAuth token"
+        val slot = slot<HttpRequest>()
+        every { mockHttpClient.post(capture(slot)) } returns httpResponse
+        val argument = mapOf(
+            IN_ARG_NAME_1 to value1,
+            IN_ARG_NAME_2 to value2
+        )
+        runBlocking {
+            action.invokeCustom(
+                argument,
+                customArguments = Collections.singletonMap(name, value),
+                headerValues = mapOf(headerKey to headerValue)
+            )
+        }
+        val request = slot.captured
+
+        val envelope = XmlParser.parse(request.getBody()!!)!!
+        val body = envelope.childElements.find { it.localName == "Body" }!!
+        val action = body.childElements.find { it.localName == ACTION_NAME }!!
+
+        assertThat(request.getHeader(headerKey)).isEqualTo(headerValue)
+        assertThat(action.childElements.size).isEqualTo(3)
+        assertThat(action.childElements[0].localName).isEqualTo(IN_ARG_NAME_1)
+        assertThat(action.childElements[0].value).isEqualTo(value1)
+
+        assertThat(action.childElements[1].localName).isEqualTo(IN_ARG_NAME_2)
+        assertThat(action.childElements[1].value).isEqualTo(value2)
+
+        assertThat(action.childElements[2].localName).isEqualTo(name)
+        assertThat(action.childElements[2].value).isEqualTo(value)
+    }
+
+    @Test
     fun invokeSync_リクエストSOAPの引数確認_カスタム引数指定NSあり() {
         val value1 = "value1"
         val value2 = "value2"

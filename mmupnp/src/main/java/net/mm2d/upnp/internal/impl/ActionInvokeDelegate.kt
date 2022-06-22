@@ -33,13 +33,14 @@ internal class ActionInvokeDelegate(
         argumentValues: Map<String, String?>,
         customNamespace: Map<String, String>,
         customArguments: Map<String, String>,
+        headerValues: Map<String, String>,
         returnErrorResponse: Boolean
     ): Map<String, String> {
         val arguments = argumentMap.values
             .filter { it.isInputDirection }
             .map { it.name to selectArgumentValue(it, argumentValues) } +
             customArguments.toList()
-        return invoke(arguments.makeSoap(customNamespace), returnErrorResponse)
+        return invoke(arguments.makeSoap(customNamespace), headerValues,  returnErrorResponse)
     }
 
     /**
@@ -56,8 +57,8 @@ internal class ActionInvokeDelegate(
         argumentValues[argument.name] ?: argument.relatedStateVariable.defaultValue
 
     @Throws(IOException::class)
-    private suspend fun invoke(soap: String, returnErrorResponse: Boolean): Map<String, String> =
-        invoke(soap).also {
+    private suspend fun invoke(soap: String, headerValues: Map<String, String>, returnErrorResponse: Boolean): Map<String, String> =
+        invoke(soap, headerValues).also {
             Logger.v { "action result:\n$it" }
             if (!returnErrorResponse && it.containsKey(Action.ERROR_CODE_KEY)) {
                 throw IOException("error response: $it")
@@ -72,8 +73,8 @@ internal class ActionInvokeDelegate(
      * @throws IOException if an I/O error occurs or receive the error response.
      */
     @Throws(IOException::class)
-    private suspend fun invoke(soap: String): Map<String, String> {
-        val request = makeHttpRequest(makeAbsoluteControlUrl(), soap)
+    private suspend fun invoke(soap: String, headerValues: Map<String, String>): Map<String, String> {
+        val request = makeHttpRequest(makeAbsoluteControlUrl(), soap, headerValues)
         Logger.d { "action invoke:\n$request" }
         val response = createHttpClient().post(request)
         val body = response.getBody()
@@ -115,7 +116,7 @@ internal class ActionInvokeDelegate(
      * @throws IOException if an I/O error occurs.
      */
     @Throws(IOException::class)
-    private fun makeHttpRequest(url: URL, soap: String): HttpRequest =
+    private fun makeHttpRequest(url: URL, soap: String, headerValues: Map<String, String>): HttpRequest =
         HttpRequest.create().apply {
             setMethod(Http.POST)
             setUrl(url, true)
@@ -123,6 +124,9 @@ internal class ActionInvokeDelegate(
             setHeader(Http.USER_AGENT, Property.USER_AGENT_VALUE)
             setHeader(Http.CONNECTION, Http.CLOSE)
             setHeader(Http.CONTENT_TYPE, Http.CONTENT_TYPE_DEFAULT)
+            headerValues.forEach {
+                setHeader(it.key, it.value)
+            }
             setBody(soap, true)
         }
 

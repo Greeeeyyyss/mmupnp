@@ -33,6 +33,7 @@ object EmptyAction : Action {
         argumentValues: Map<String, String?>,
         customNamespace: Map<String, String>,
         customArguments: Map<String, String>,
+        headerValues: Map<String, String>,
         returnErrorResponse: Boolean
     ): Map<String, String> {
         throw IOException("empty object")

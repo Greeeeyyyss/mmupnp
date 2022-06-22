@@ -32,15 +32,16 @@ internal class ActionImpl(
     override suspend fun invoke(
         argumentValues: Map<String, String?>,
         returnErrorResponse: Boolean
-    ): Map<String, String> = invokeCustom(argumentValues, emptyMap(), emptyMap(), returnErrorResponse)
+    ): Map<String, String> = invokeCustom(argumentValues, emptyMap(), emptyMap(), emptyMap(), returnErrorResponse)
 
     override suspend fun invokeCustom(
         argumentValues: Map<String, String?>,
         customNamespace: Map<String, String>,
         customArguments: Map<String, String>,
+        headerValues: Map<String, String>,
         returnErrorResponse: Boolean
     ): Map<String, String> =
-        invokeDelegate.invoke(argumentValues, customNamespace, customArguments, returnErrorResponse)
+        invokeDelegate.invoke(argumentValues, customNamespace, customArguments, headerValues, returnErrorResponse)
 
     class Builder {
         private var service: ServiceImpl? = null
