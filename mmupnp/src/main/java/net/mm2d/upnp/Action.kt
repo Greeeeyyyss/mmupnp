@@ -133,6 +133,7 @@ interface Action {
         argumentValues: Map<String, String?>,
         customNamespace: Map<String, String> = emptyMap(),
         customArguments: Map<String, String> = emptyMap(),
+        headerValues: Map<String, String> = emptyMap(),
         returnErrorResponse: Boolean = false
     ): Map<String, String>
 
